@@ -22,16 +22,18 @@ Always follow this decision tree — never skip steps.
 ### 1. If you don't know what's in the knowledge base yet
 Call these in parallel before doing anything else:
 - `get_graph_schema` — what entity types and relationships exist
-- `get_facet_dimensions` — what filter dimensions are available
+- `get_facet_dimensions(bucket_id?)` — what filter dimensions are available; pass `bucket_id` to scope to a segment
 
 ### 2. Searching for candidates or documents
 ```
-search(query, facets?, fields?, limit?)
+search(query, facets?, fields?, limit?, offset?, bucket_id?)
 ```
 - Start broad, then narrow with `facets` if too many results
 - Always pass `fields` to limit response size (e.g. `["name", "current_title", "skills"]`)
 - After finding a promising result, use `find_similar(document_id)` to surface related profiles
 - Use `get_facet_values(dimension)` to see valid values before filtering
+- Pass `bucket_id` to scope results to a specific job, role, or client segment
+- Paginate with `offset` when results exceed `limit` — e.g. `limit=10, offset=10` for page 2. Check `totalCount` in the response to know when you've reached the end.
 
 ### 3. Exploring a specific person or entity
 ```
@@ -60,8 +62,10 @@ resolve_object(signals)                  # check if exists
 web_search(query)                        # find external sources
 web_extract(url)                         # pull full page content
 submit_observation(...)                  # record what you learned or gaps you found
+list_observations(page_size?, offset?)   # review previously submitted observations
 ```
 Always call `submit_observation` after enrichment to log what changed or what was missing.
+Call `list_observations` before submitting to avoid duplicate reports — check if the gap has already been flagged.
 
 ### 7. Managing signals (watchers)
 
@@ -113,6 +117,14 @@ Prefer `pause_signal` over `delete_signal` unless the user explicitly wants it g
 ### "Stop/pause/delete a signal"
 1. `list_signals(user_id)` to find the `subscription_id`
 2. `pause_signal` to temporarily stop it, `delete_signal` only if permanently unwanted
+
+### "Search within a specific job or client bucket"
+1. `get_facet_dimensions(bucket_id="<bucket>")` to see dimensions available in that scope
+2. `search(query, bucket_id="<bucket>", fields=[...])`
+
+### "What data quality issues have been flagged?"
+1. `list_observations()` — returns newest first
+2. Filter by `kind` (struggle, data_gap, suggested_change, observation) in your response
 
 ---
 
