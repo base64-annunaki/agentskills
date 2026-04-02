@@ -1,0 +1,17 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "poneglyph",
+  "description": "Plugins by Poneglyph for Claude Code",
+  "owner": {
+    "name": "Poneglyph",
+    "url": "https://github.com/base64-annunaki"
+  },
+  "plugins": [
+    {
+      "name": "poneglyph-intelligence",
+      "description": "Recruiting intelligence skill for the Poneglyph knowledge base — search candidates, explore profiles, map connections, enrich data, and manage signals",
+      "source": "./plugins/poneglyph-intelligence",
+      "category": "development"
+    }
+  ]
+}
