@@ -5,21 +5,16 @@ Recruiting intelligence skill for the Poneglyph knowledge base. Search candidate
 ## Installation
 
 ```bash
+claude plugin marketplace add base64-annunaki/agentskills
 claude plugin install poneglyph-intelligence@poneglyph
 ```
 
 ## Setup
 
-After installing, set your personal API token as an environment variable:
+Set your personal API token permanently in Claude Code:
 
 ```bash
-export PONEGLYPH_API_TOKEN=your-token-here
-```
-
-To make it permanent, add it to your shell profile (`~/.zshrc`, `~/.bashrc`, etc.):
-
-```bash
-echo 'export PONEGLYPH_API_TOKEN=your-token-here' >> ~/.zshrc
+claude config set env.PONEGLYPH_API_TOKEN your-token-here
 ```
 
 Generate your token at [app.queryintelligence.io](https://app.queryintelligence.io) → Settings → API Tokens.
@@ -27,3 +22,12 @@ Generate your token at [app.queryintelligence.io](https://app.queryintelligence.
 ## Usage
 
 Once installed and configured, use `/poneglyph` in any Claude Code session to activate the recruiting intelligence skill.
+
+## Updating
+
+When a new version is released:
+
+```bash
+claude plugin marketplace update poneglyph
+claude plugin update poneglyph-intelligence@poneglyph
+```
