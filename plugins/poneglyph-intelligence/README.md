@@ -17,7 +17,7 @@ Set your personal API token permanently in Claude Code:
 claude config set env.PONEGLYPH_API_TOKEN your-token-here
 ```
 
-Generate your token at [app.queryintelligence.io](https://app.queryintelligence.io) → Settings → API Tokens.
+Generate your token at [app.pintl.ai](https://app.pintl.ai) → Settings → API Tokens.
 
 ## Usage
 
