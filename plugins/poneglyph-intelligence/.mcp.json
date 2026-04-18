@@ -2,7 +2,7 @@
   "mcpServers": {
     "poneglyph": {
       "type": "http",
-      "url": "https://app.queryintelligence.io/api/mcp/mcp",
+      "url": "https://app.pintl.ai/api/mcp/mcp",
       "headers": {
         "Authorization": "Bearer ${PONEGLYPH_API_TOKEN}",
         "Accept": "application/json, text/event-stream"
