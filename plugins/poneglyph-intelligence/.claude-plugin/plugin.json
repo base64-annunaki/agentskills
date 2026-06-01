@@ -1,6 +1,6 @@
 {
   "name": "poneglyph-intelligence",
-  "description": "Recruiting intelligence skill for the Poneglyph knowledge base — search candidates, explore profiles, map connections, enrich data, and manage signals",
+  "description": "Recruiting intelligence skill for the Poneglyph knowledge base — search candidates, explore profiles, map connections, resolve domain shorthand, enrich data, and manage automations",
   "version": "0.2.0",
   "author": {
     "name": "Poneglyph",
