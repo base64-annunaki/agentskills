@@ -2,122 +2,111 @@
 name: poneglyph
 description: >
   Recruiting intelligence assistant for the Poneglyph knowledge base. Use when
-  searching for candidates, exploring profiles, mapping connections between people
-  and companies, enriching data, or setting up change watchers (signals).
-  Triggers on: "find candidates", "search profiles", "who worked at",
-  "candidate pipeline", "graph", "connections", "enrich", "watch for", "signal",
-  or any talent/recruiting question.
+  searching for candidates, exploring profiles, mapping connections between people,
+  companies and schools, resolving domain shorthand, enriching data, or setting up
+  recurring automations. Triggers on: "find candidates", "search profiles",
+  "who worked at", "candidate pipeline", "graph", "connections", "career path",
+  "skill network", "enrich", "watch for", "automation", or any talent/recruiting question.
 ---
 
 # Poneglyph — Recruiting Intelligence Skill
 
 Poneglyph is a knowledge graph + semantic search platform for recruiting intelligence.
-It holds candidate profiles (Person nodes), companies, schools, and skills
-linked by graph relationships (WORKED_AT, STUDIED_AT, HAS_SKILL).
+It holds candidate profiles (Person nodes), companies, schools, and skills linked by
+graph relationships (WORKED_AT, EDUCATED_AT, HAS_SKILL). Many tools accept an optional
+`bucket_id` to scope to a job, role, or client segment.
 
-## Tool calling order
+## Tool-calling order
 
-Always follow this decision tree — never skip steps.
+Follow this decision tree. Discover before you search; resolve shorthand before you guess.
 
-### 1. If you don't know what's in the knowledge base yet
-Call these in parallel before doing anything else:
-- `get_graph_schema` — what entity types and relationships exist
-- `get_facet_dimensions(bucket_id?)` — what filter dimensions are available; pass `bucket_id` to scope to a segment
+### 1. Discover what's in the knowledge base
+When you don't yet know the shape of the data, call these first (in parallel):
+- `get_graph_schema` — entity/node types (labels) and relationship types, each with a count
+- `get_facet_dimensions(bucket_id?)` — available filter dimensions for the workspace
+- `list_domain_terms` — the workspace's defined shorthand (acronyms, company/school cohorts, title/seniority tiers)
 
-Known facet dimensions: `current_company`, `education_level`, `location`, `seniority_level`, `skill`, `total_companies`, `years_experience`
+### 2. Resolve domain shorthand — never guess an acronym
+If the user uses an acronym, cohort name, title tier, or other shorthand:
+- `resolve_domain_term(text)` — returns the canonical entity (aliases, kind, member node IDs, expansion `values`). Call this BEFORE searching, then search with what it returns. When a resolved term carries `values`, expand those into your search filter instead of searching the raw term.
+- `teach_domain_term(term, values, kind?, description?)` — when a term does NOT resolve AND a search for it also returns nothing, do not conclude "no data": ask the user what the term means (which concrete values it maps to), then persist their answer here so it resolves on the next turn. Never invent a mapping — store only what the user states.
 
-### 2. Searching for candidates or documents
-```
-search(query, facets?, fields?, limit?, offset?, bucket_id?)
-```
-- Start broad, then narrow with `facets` if too many results
-- Use `get_facet_values(dimension)` to see valid values before filtering
-- After finding a promising result, use `find_similar(document_id)` to surface related profiles
-- Pass `bucket_id` to scope results to a specific job, role, or client segment
-- Paginate with `offset` when results exceed `limit` — e.g. `limit=10, offset=10` for page 2. Check `totalCount` in the response to know when you've reached the end.
+### 3. Search for candidates or documents
+Route by the kind of query:
+- `text_search(query, ...)` — exact names, tokens, or rare terms (a literal string to look up)
+- `vector_search(query, ...)` — concepts or fuzzy attributes ("people excited about climate")
+- `facet_search(facets, ...)` — filtered search once exact facet dimensions + values are known (after `get_facet_values(dimension)`)
+- `paginate_search(...)` — the next page of a prior `vector_search` / `facet_search` when `total_count` exceeds the page
 
-### 3. Exploring a specific person or entity
-```
-get_documents(document_ids=[doc_id, ...])   # fetch full profile data
-find_neighbors(label, name, depth)           # explore graph connections (depth 2 is usually enough)
-```
+### 4. Explore the graph around a person or entity
+- `find_neighbors(label, name, depth)` — transitively-connected entities, "who connects to X" (depth 2 is usually enough)
+- `network_proximity(name, hops)` — people within N hops of a given person (coworkers, classmates)
+- `find_paths(from_label, from_name, to_label, to_name)` — shortest path(s) between two known entities
+- `career_path(...)` — people who moved from one company to another, ordered by transition date ("who left Stripe for Anthropic?")
+- `skill_network(skill)` — people with a named skill plus the adjacent skills they also hold
+- `graph_search(...)` — filter subjects by exact graph connections (skill / company / school edges)
+- `graph_query_nodes(...)` / `graph_query_edges(...)` — filter, order, paginate the live Memgraph projection
+- `query_nodes(...)` / `query_edges(...)` — filter, order, paginate node / edge rows in Postgres
 
-### 4. Finding connections between two people or entities
-```
-find_paths(from_label, from_name, to_label, to_name)
-```
+### 5. Remember facts across turns
+- `submit_observation(...)` — save a fact the user stated about an entity ("she relocated to Amsterdam", "he rejected our offer")
+- `list_observations(...)` — read saved facts, newest first; call at the start of a candidate turn to recall context (and before submitting, to avoid duplicates)
 
-### 5. Enriching with external data
-```
-web_search(query)                        # find external sources
-web_extract(url)                         # pull full page content
-submit_observation(...)                  # record what you learned or gaps you found
-list_observations(page_size?, offset?)   # review previously submitted observations
-```
-Always call `submit_observation` after enrichment to log what changed or what was missing.
-Call `list_observations` before submitting to avoid duplicate reports — check if the gap has already been flagged.
+### 6. Enrich with external data
+- `run_agent_task(prompt)` — a short-lived research sub-agent (max ~5 turns) with web search/fetch; returns a text summary
+- `trigger_enrichment(...)` — spawn an LLM-planned recurring background automation to close a data gap or resolve low-confidence data (expensive)
+- `twitter_user_lookup(handle)` / `twitter_user_recent_posts(handle)` — public X (Twitter) profile and recent original posts
 
-### 6. Managing signals (watchers)
+### 7. Automations (recurring monitors / watchers)
+Always start with `list_automations()` to see what's active.
+- `create_automation(...)` — a recurring monitor that fires when a candidate query yields new matches or a watched page / blog / RSS feed changes
+- `update_automation(...)` — patch interval / description / goal without recreating it
+- `pause_automation(id)` / `resume_automation(id)` — temporarily disable / re-enable (prefer pausing over deleting)
+- `delete_automation(id)` — permanent removal; use only when the user explicitly wants it gone
+- `run_automation(id)` — execute an existing automation once, right now
+- Automation **actions** (what fires on trigger): `send_email`, `send_telegram`, `call_webhook`
 
-Always start with `list_signals()` (no params) to see what's already active.
-
-**Create:**
-```
-create_signal(user_id, trigger_type, entity_type, description, watch_config?)
-```
-- `trigger_type: "external_poll"` — polls URLs, RSS feeds, GitHub repos, web pages on an interval
-- `trigger_type: "internal_event"` — fires on system events (application status change, threshold crossed)
-- `watch_config` optional keys: `interval_minutes`, `cooldown_minutes`, `condition`, `filter`
-
-**Manage existing signals** (need `subscription_id` from `list_signals()`):
-```
-pause_signal(subscription_id)    # stop checking, keep config — use for temporary pauses
-resume_signal(subscription_id)   # re-activate a paused signal
-delete_signal(subscription_id)   # permanent removal
-```
-
-Prefer `pause_signal` over `delete_signal` unless the user explicitly wants it gone.
+### 8. Specialist subagents
+- `subagent-dispatch` — when and how to dispatch a researcher / graph-analyst / profiler via the Agent tool, and how to consume its results
 
 ---
 
+## Presenting results — REQUIRED output formats
+- `candidate-card-widget` — the host-styled `<widget>` card layout for candidate / document search results; use this instead of prose lists
+- `person-widget` — the card layout for person results (with optional tabs)
+- `talent-evaluation` — the company-tier (T1–T5) framework for scoring, calibrating, and ranking software-engineering candidates
+
 ## Common use cases
 
-### "Find me candidates with X years in Y field"
+### "Find me senior engineers with X years in Y field"
 1. `get_facet_dimensions` (if not already known)
-2. `get_facet_values("seniority_level")` to see valid values
-3. `search(query, facets={"seniority_level": ["senior"]}, limit=10)`
+2. `get_facet_values("seniority_level")` for valid values
+3. `facet_search(facets={"seniority_level": ["senior"]}, ...)` → render with `candidate-card-widget`
 
-### "What's the background of [person]?"
-1. `search(query="[person name]", limit=3)` to find their document ID
-2. `get_documents(document_ids=[doc_id])`
-3. `find_neighbors(label="Person", name="...", depth=2)`
+### "Find people who left [Company A] for [Company B]"
+1. `career_path(...)` from A to B
 
-### "Who from [company] applied recently?"
-1. `search("candidates from [company]", facets={"current_company": ["CompanyName"]})`
-2. OR: `find_neighbors(label="Company", name="...", relationship_types=["WORKED_AT"])`
+### "Who is connected to [person], and how?"
+1. `network_proximity(name="...", hops=2)` or `find_neighbors(label="Person", name="...", depth=2)`
+2. `find_paths(...)` for a specific A→B connection
+
+### "Who in our base is a '<acronym / cohort>'?"
+1. `resolve_domain_term("<acronym>")` → search using the returned `values` / members
+2. If unresolved AND the search is empty → ask the user, `teach_domain_term(...)`, then re-search
 
 ### "Watch for new candidates from [company]"
-1. `list_signals()` to check if already watching
-2. `create_signal(user_id, "internal_event", "candidate", "New candidate from [company] joins pipeline")`
+1. `list_automations()` to check if already watching
+2. `create_automation(...)` with the query + an action (`send_email` / `send_telegram`)
 
-### "Stop/pause/delete a signal"
-1. `list_signals()` to find the `subscription_id`
-2. `pause_signal(subscription_id)` to temporarily stop it, `delete_signal(subscription_id)` only if permanently unwanted
-
-### "Search within a specific job or client bucket"
-1. `get_facet_dimensions(bucket_id="<bucket>")` to see dimensions available in that scope
-2. `search(query, bucket_id="<bucket>")`
-
-### "What data quality issues have been flagged?"
-1. `list_observations()` — returns newest first
-2. Filter by `kind` (struggle, data_gap, suggested_change, observation) in your response
+### "What facts have we saved about [person]?"
+1. `list_observations()` — newest first
 
 ---
 
 ## Response guidelines
-
-- Always surface **why** a result is relevant (which facets matched, what graph path was found)
-- When returning candidates, format as a short table: name | current role | key signal
-- If a search returns 0 results, broaden the query and try again before reporting no results
-- If data seems incomplete or wrong, call `submit_observation` with `kind="data_gap"` or `kind="struggle"`
-- Never invent data — if it's not in a tool result, say so and offer to enrich via `web_search`
+- Resolve shorthand with `resolve_domain_term` before searching — never guess what an acronym means.
+- Route search by query type: `text_search` for literal names, `vector_search` for concepts, `facet_search` for known filters.
+- If a term is unknown AND a search for it is empty, ASK the user and `teach_domain_term` — do not conclude "no data."
+- Render candidate / person results with the widget skills, not prose lists. Always surface **why** a result matched (which facets, what graph path).
+- Never invent data — if it's not in a tool result, say so and offer to enrich (`run_agent_task` / `trigger_enrichment`).
+- Never surface internal IDs (node / document / UUID) to the user.
