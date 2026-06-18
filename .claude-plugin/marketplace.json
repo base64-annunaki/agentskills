@@ -12,6 +12,12 @@
       "description": "Recruiting intelligence skill for the Poneglyph knowledge base — search candidates, explore profiles, map connections, enrich data, and manage signals",
       "source": "./plugins/poneglyph-intelligence",
       "category": "development"
+    },
+    {
+      "name": "poneglyph-dev",
+      "description": "Poneglyph engineering workflow skills — chong-ready takes the relevant open PRs across the workspace repos to rebased, conflict-free, quality-checked, and pushed.",
+      "source": "./plugins/poneglyph-dev",
+      "category": "development"
     }
   ]
 }

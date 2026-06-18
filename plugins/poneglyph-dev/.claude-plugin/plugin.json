@@ -1,0 +1,9 @@
+{
+  "name": "poneglyph-dev",
+  "description": "Poneglyph engineering workflow skills for Claude Code. Includes chong-ready: take the relevant open PRs across the workspace repos to rebased, conflict-free, quality-checked, and pushed — and fix what it finds.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Poneglyph",
+    "url": "https://github.com/base64-annunaki"
+  }
+}
