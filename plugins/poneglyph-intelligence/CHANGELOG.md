@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.0 (2026-07-03)
+- Relationship routing: relationship-shaped questions ("who worked with X") now route to `find_paths` **discovery mode** (graph edge interpolation) — never document search.
+- Document the generic discovery rules (per-hop relationship types, via/target labels, interval-overlap correlation, edge filter, span-ordered paging) with per-vertical spec examples.
+
+
 ## [0.2.0](https://github.com/base64-annunaki/agentskills/compare/poneglyph-intelligence@v0.1.0...poneglyph-intelligence@v0.2.0) (2026-04-18)
 
 
