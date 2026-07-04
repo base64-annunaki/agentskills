@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.3.0](https://github.com/base64-annunaki/agentskills/compare/poneglyph-intelligence@v0.2.0...poneglyph-intelligence@v0.3.0) (2026-07-04)
+
+
+### Features
+
+* **poneglyph-intelligence:** Route relationship questions to find_paths discovery mode ([08a7c8e](https://github.com/base64-annunaki/agentskills/commit/08a7c8e3f5fd0885bf3b52155d8c749c7954ff4f))
+* **poneglyph-intelligence:** Sync skill doc with current tool surface ([1d6514d](https://github.com/base64-annunaki/agentskills/commit/1d6514db6ec3df15fd581d87fb8b14ecb7413b1e))
+* **poneglyph-intelligence:** Sync skill doc with current tool surface ([843fadc](https://github.com/base64-annunaki/agentskills/commit/843fadc135c91f0e5394b0c4e5d9db70bb0b242d))
+
+
+### Bug Fixes
+
+* **poneglyph-intelligence:** Update token setup URL to app.pintl.ai ([b36e1f0](https://github.com/base64-annunaki/agentskills/commit/b36e1f034db4bb4af5c299c8c75ffc1e2e9fcba9))
+* **poneglyph-intelligence:** Update URLs from queryintelligence.io to pintl.ai ([b3a43c1](https://github.com/base64-annunaki/agentskills/commit/b3a43c12b134fc47b0a97ef1bd270a392b48fdfe))
+* **poneglyph:** Correct tool signatures and known facet dimensions ([#7](https://github.com/base64-annunaki/agentskills/issues/7)) ([9b78251](https://github.com/base64-annunaki/agentskills/commit/9b7825185492fc2f27812bb565c1142043252163))
+
 ## [0.2.0](https://github.com/base64-annunaki/agentskills/compare/poneglyph-intelligence@v0.1.0...poneglyph-intelligence@v0.2.0) (2026-04-18)
 
 
