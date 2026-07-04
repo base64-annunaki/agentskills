@@ -39,9 +39,13 @@ Route by the kind of query:
 - `paginate_search(...)` — the next page of a prior `vector_search` / `facet_search` when `total_count` exceeds the page
 
 ### 4. Explore the graph around a person or entity
+
+**Relationship-shaped questions ("who worked/served/lived/litigated with X", "who is related to X by rule R") are NEVER answered by document search** — the related entity's document does not mention X; the relationship exists only as graph edges. Use the graph and interpolate edge meaning: two edges to the same neighbor node with overlapping date properties = "together at the same time". Recipe: `get_graph_schema` to learn the vertical's relationship types → `find_paths` in discovery mode (omit the `to_*` fields) with the rules → narrow topically afterwards (`edge_filter_*`, or intersect with topical search `node_id`s).
+
 - `find_neighbors(label, name, depth)` — transitively-connected entities, "who connects to X" (depth 2 is usually enough)
 - `network_proximity(name, hops)` — people within N hops of a given person (coworkers, classmates)
 - `find_paths(from_label, from_name, to_label, to_name)` — shortest path(s) between two known entities
+- `find_paths(from_..., NO to_...)` — **discovery mode**: entities related to X through a shared neighbor under declarative rules — `from_relationship_types` / `to_relationship_types` (per hop), `via_labels` / `to_labels`, `via_name`, interval overlap via `correlation_start_property` / `correlation_end_property` / `min_span_months`, `edge_filter_property` + `edge_filter_contains`, `limit` / `offset` (span-ordered). The rules are generic — same call shape for colleagues (`WORKED_AT`/`Company`, overlap `start_date`/`end_date`), classmates (`EDUCATED_AT`/`School`, overlap `start_year`/`end_year`), co-parties (`PARTY_TO`/`Case`, no correlation), co-residents (`RESIDED_AT`/`Building`, lease-date overlap)
 - `career_path(...)` — people who moved from one company to another, ordered by transition date ("who left Stripe for Anthropic?")
 - `skill_network(skill)` — people with a named skill plus the adjacent skills they also hold
 - `graph_search(...)` — filter subjects by exact graph connections (skill / company / school edges)
@@ -89,6 +93,12 @@ Always start with `list_automations()` to see what's active.
 ### "Who is connected to [person], and how?"
 1. `network_proximity(name="...", hops=2)` or `find_neighbors(label="Person", name="...", depth=2)`
 2. `find_paths(...)` for a specific A→B connection
+
+### "Who worked with [person] at [company] (at the same time)?" — and every other "related to X by rule R"
+NEVER text/vector search — the graph is the only source of relationships.
+1. `get_graph_schema` → the vertical's relationship types
+2. `find_paths(from_node_id=<X>, from_relationship_types=["WORKED_AT"], via_labels=["Company"], via_name="<company>", correlation_start_property="start_date", correlation_end_property="end_date")` — omit all `to_*` fields
+3. Narrow topically: `edge_filter_property="title"` + `edge_filter_contains="..."`, raise `min_span_months`, or intersect with topical search `node_id`s; page with `offset`
 
 ### "Who in our base is a '<acronym / cohort>'?"
 1. `resolve_domain_term("<acronym>")` → search using the returned `values` / members
