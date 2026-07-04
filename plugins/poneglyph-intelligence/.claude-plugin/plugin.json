@@ -1,7 +1,7 @@
 {
   "name": "poneglyph-intelligence",
   "description": "Recruiting intelligence skill for the Poneglyph knowledge base — search candidates, explore profiles, map connections, resolve domain shorthand, enrich data, and manage automations",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "author": {
     "name": "Poneglyph",
     "url": "https://github.com/base64-annunaki"
