@@ -100,6 +100,8 @@ NEVER text/vector search — the graph is the only source of relationships.
 2. `find_paths(from_node_id=<X>, from_relationship_types=["WORKED_AT"], via_labels=["Company"], via_name="<company>", correlation_start_property="start_date", correlation_end_property="end_date")` — omit all `to_*` fields
 3. Narrow topically: `edge_filter_property="title"` + `edge_filter_contains="..."`, raise `min_span_months`, or intersect with topical search `node_id`s; page with `offset`
 
+**A topical qualifier ("on ‹topic›", "in ‹field›") is a semantic concept, not a keyword.** `edge_filter_contains` is only a COARSE literal pre-filter — it also matches longer words that merely contain the substring (e.g. it will match "**re**search" roles) and misses records that express the concept in other words or in a title that never spells it out. So don't treat a raw substring filter as the answer: use it as a rough first cut, then **intersect the result set with a topical/semantic search** over the discovered entities (or reason over the returned titles) to keep the genuine matches. Interpret each topic on its own terms — there is an unbounded space of possible qualifiers, so never hardcode or assume a fixed keyword.
+
 ### "Who in our base is a '<acronym / cohort>'?"
 1. `resolve_domain_term("<acronym>")` → search using the returned `values` / members
 2. If unresolved AND the search is empty → ask the user, `teach_domain_term(...)`, then re-search
