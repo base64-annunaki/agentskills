@@ -1,0 +1,12 @@
+# Approval gate for this repository.
+#
+# Paired with "Require review from Code Owners" on the main ruleset, this means no pull
+# request merges without an approval from a member of the code-owners team. Ownership is
+# the whole tree deliberately: the rule is about who signs off, not about which files.
+#
+# Membership is managed at the org level:
+# https://github.com/orgs/base64-annunaki/teams/code-owners
+# The team must keep write access — an approval from someone without it does not satisfy
+# the requirement, and the PR would sit blocked with an approval showing on it.
+
+*  @base64-annunaki/code-owners
