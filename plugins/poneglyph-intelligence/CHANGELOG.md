@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/base64-annunaki/agentskills/compare/poneglyph-intelligence@v0.3.0...poneglyph-intelligence@v0.4.0) (2026-08-29)
+
+
+### Features
+
+* **poneglyph:** Topical qualifiers are semantic, not a literal substring ([#11](https://github.com/base64-annunaki/agentskills/issues/11)) ([63558dc](https://github.com/base64-annunaki/agentskills/commit/63558dc164dd421556f478379c567d86a9042683))
+
 ## [0.3.0](https://github.com/base64-annunaki/agentskills/compare/poneglyph-intelligence@v0.2.0...poneglyph-intelligence@v0.3.0) (2026-07-04)
 
 
