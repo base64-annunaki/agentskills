@@ -1,6 +1,6 @@
 # poneglyph-intelligence
 
-Recruiting intelligence skill for the Poneglyph knowledge base. Search candidates, explore profiles, map connections between people and companies, enrich data from external sources, and manage signal watchers.
+Recruiting intelligence skill for the Poneglyph knowledge base. Search candidates, explore profiles, query and count graph cohorts, map connections between people and companies, and enrich profiles from external sources. The MCP surface is read-only.
 
 ## Installation
 

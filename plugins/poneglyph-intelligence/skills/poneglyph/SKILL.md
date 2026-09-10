@@ -1,12 +1,14 @@
 ---
 name: poneglyph
 description: >
-  Recruiting intelligence assistant for the Poneglyph knowledge base. Use when
-  searching for candidates, exploring profiles, mapping connections between people
-  and companies, enriching data, or setting up change watchers (signals).
+  Read-only recruiting intelligence assistant for the Poneglyph knowledge base.
+  Use when searching for candidates, exploring profiles, filtering or counting
+  cohorts in the graph, mapping connections between people and companies, or
+  enriching a profile with public web data.
   Triggers on: "find candidates", "search profiles", "who worked at",
-  "candidate pipeline", "graph", "connections", "enrich", "watch for", "signal",
-  or any talent/recruiting question.
+  "who worked with", "candidate pipeline", "graph", "connections", "enrich",
+  or any talent/recruiting question. Do not use to create, edit, or monitor
+  anything — this surface has no write tools and no signals or watchers.
 ---
 
 # Poneglyph — Recruiting Intelligence Skill
@@ -15,68 +17,66 @@ Poneglyph is a knowledge graph + semantic search platform for recruiting intelli
 It holds candidate profiles (Person nodes), companies, schools, and skills
 linked by graph relationships (WORKED_AT, STUDIED_AT, HAS_SKILL).
 
+Every tool on this surface reads. Nothing creates, updates, or watches data.
+
 ## Tool calling order
 
 Always follow this decision tree — never skip steps.
 
 ### 1. If you don't know what's in the knowledge base yet
 Call these in parallel before doing anything else:
-- `get_graph_schema` — what entity types and relationships exist
-- `get_facet_dimensions(bucket_id?)` — what filter dimensions are available; pass `bucket_id` to scope to a segment
+- `get_graph_schema()` — node labels and relationship types, with counts
+- `get_facet_dimensions()` — what filter dimensions are available
 
 Known facet dimensions: `current_company`, `education_level`, `location`, `seniority_level`, `skill`, `total_companies`, `years_experience`
 
-### 2. Searching for candidates or documents
+Scope comes from your API key — leave `vertical_id` unset unless the user names one.
+
+### 2. Describing a person — semantic search
 ```
-search(query, facets?, fields?, limit?, offset?, bucket_id?)
+search(query, facets?, fields?, limit?, offset?)
 ```
+- `search` is semantic over each person's OWN profile text. It does not traverse the graph, so relational questions ("who worked with X", "colleagues of Y") cannot be answered here — go to step 5.
 - Start broad, then narrow with `facets` if too many results
 - Use `get_facet_values(dimension)` to see valid values before filtering
-- After finding a promising result, use `find_similar(document_id)` to surface related profiles
-- Pass `bucket_id` to scope results to a specific job, role, or client segment
-- Paginate with `offset` when results exceed `limit` — e.g. `limit=10, offset=10` for page 2. Check `totalCount` in the response to know when you've reached the end.
+- After a promising result, `find_similar(document_id)` surfaces related profiles
+- Paginate with `offset` — e.g. `limit=10, offset=10` for page 2. Check `totalCount` to know when you've reached the end.
 
-### 3. Exploring a specific person or entity
+### 3. Hard predicates and counts — query the graph
 ```
-get_documents(document_ids=[doc_id, ...])   # fetch full profile data
-find_neighbors(label, name, depth)           # explore graph connections (depth 2 is usually enough)
+query_graph_nodes(label, filters?, has_neighbors?, order_by?, limit?, cursor?)
+aggregate_graph(cohort_filter, group_by, order?, limit?, offset?)
 ```
+- Use `query_graph_nodes` when the question is a rule, not a vibe: each `has_neighbors` entry requires a 1-hop relationship to exist, and several are ANDed — so "has both these skills" or "founder AND advisor" is one call. Matched neighbours are not returned, only the nodes themselves.
+- Use `aggregate_graph` for "most common / rarest / top N X across a cohort". `cohort_filter` defines the population as `{dimension: [values]}`, `group_by` names the dimension to count.
+- Both need real labels and edge types — call `get_graph_schema` first.
 
-### 4. Finding connections between two people or entities
+### 4. Exploring a specific person or entity
 ```
-find_paths(from_label, from_name, to_label, to_name)
+resolve_object(signals=[{signal_type, signal_value}])  # email, linkedin_url, full_name, … -> existing objects
+batch_get_nodes(node_ids=[...], type?)                 # up to 50 node UUIDs in one round trip
+get_documents(document_ids=[...])                      # full document records by document ID
+find_neighbors(node_id | label+name, depth?, relationship_types?, limit?)
 ```
+- Once search, `query_graph_nodes`, `find_paths` or `resolve_object` has handed you node IDs, hydrate them with one `batch_get_nodes` call — not one `find_neighbors` per person.
+- `batch_get_nodes` accepts internal node UUIDs only. Resolve an email or LinkedIn URL through `resolve_object` first.
+- Its `graph_context` counts are not vertical-scoped — treat them as advisory, never quote one as a scoped total.
 
-### 5. Enriching with external data
+### 5. Relational questions — "who worked with X"
 ```
-web_search(query)                        # find external sources
-web_extract(url)                         # pull full page content
-submit_observation(...)                  # record what you learned or gaps you found
-list_observations(page_size?, offset?)   # review previously submitted observations
+find_paths(from_label, from_name, from_relationship_types?, via_labels?, to_labels?, ...)
 ```
-Always call `submit_observation` after enrichment to log what changed or what was missing.
-Call `list_observations` before submitting to avoid duplicate reports — check if the gap has already been flagged.
+- Omit every `to_*` field to get DISCOVERY mode: entities reached through a shared neighbour. This is the route for colleagues and classmates — e.g. `from_relationship_types=["WORKED_AT"]`, `via_labels=["Company"]`, `to_labels=["Person"]`. Add `correlation_start_property` / `correlation_end_property` to require overlapping dates ("at the same time").
+- Supplying `to_*` gives pairwise shortest-path mode, which currently under-returns: two people connected only through a shared employer come back empty rather than as an error. Never read an empty pairwise result as "no connection" — re-ask it as discovery, or cross-check with `find_neighbors` / `query_graph_nodes`.
 
-### 6. Managing signals (watchers)
-
-Always start with `list_signals()` (no params) to see what's already active.
-
-**Create:**
+### 6. Enriching with external data
 ```
-create_signal(user_id, trigger_type, entity_type, description, watch_config?)
+web_search(query, limit?, provider?)
+web_extract(url)
+list_observations(page_size?, offset?)
 ```
-- `trigger_type: "external_poll"` — polls URLs, RSS feeds, GitHub repos, web pages on an interval
-- `trigger_type: "internal_event"` — fires on system events (application status change, threshold crossed)
-- `watch_config` optional keys: `interval_minutes`, `cooldown_minutes`, `condition`, `filter`
-
-**Manage existing signals** (need `subscription_id` from `list_signals()`):
-```
-pause_signal(subscription_id)    # stop checking, keep config — use for temporary pauses
-resume_signal(subscription_id)   # re-activate a paused signal
-delete_signal(subscription_id)   # permanent removal
-```
-
-Prefer `pause_signal` over `delete_signal` unless the user explicitly wants it gone.
+- The web tools read public sources. Nothing you find is written back to the knowledge base — put it in your answer.
+- `list_observations` is read-only: review what has already been flagged instead of repeating it.
 
 ---
 
@@ -88,25 +88,22 @@ Prefer `pause_signal` over `delete_signal` unless the user explicitly wants it g
 3. `search(query, facets={"seniority_level": ["senior"]}, limit=10)`
 
 ### "What's the background of [person]?"
-1. `search(query="[person name]", limit=3)` to find their document ID
-2. `get_documents(document_ids=[doc_id])`
-3. `find_neighbors(label="Person", name="...", depth=2)`
+1. `search(query="[person name]", limit=3)` — or `resolve_object` if you have an email or LinkedIn URL
+2. `batch_get_nodes(node_ids=[...])` for the full record
+3. `find_neighbors(node_id="...", depth=2)` for what they're attached to
 
-### "Who from [company] applied recently?"
-1. `search("candidates from [company]", facets={"current_company": ["CompanyName"]})`
-2. OR: `find_neighbors(label="Company", name="...", relationship_types=["WORKED_AT"])`
+### "Who worked with [person]?"
+1. `get_graph_schema()` to confirm the labels and edge type
+2. `find_paths(from_label="Person", from_name="...", from_relationship_types=["WORKED_AT"], via_labels=["Company"], to_labels=["Person"])`
+3. Add `correlation_start_property` / `correlation_end_property` to keep only overlapping tenures
 
-### "Watch for new candidates from [company]"
-1. `list_signals()` to check if already watching
-2. `create_signal(user_id, "internal_event", "candidate", "New candidate from [company] joins pipeline")`
+### "Who from [company] is in the base?"
+1. `find_neighbors(label="Company", name="...", relationship_types=["WORKED_AT"])`
+2. OR `query_graph_nodes(label="Person", has_neighbors=[{"edge_type": "WORKED_AT", "neighbor_label": "Company", "neighbor_filters": [{"field": "canonical_name", "op": "eq", "value": "..."}]}])`
 
-### "Stop/pause/delete a signal"
-1. `list_signals()` to find the `subscription_id`
-2. `pause_signal(subscription_id)` to temporarily stop it, `delete_signal(subscription_id)` only if permanently unwanted
-
-### "Search within a specific job or client bucket"
-1. `get_facet_dimensions(bucket_id="<bucket>")` to see dimensions available in that scope
-2. `search(query, bucket_id="<bucket>")`
+### "What's the most common employer among senior [skill] engineers?"
+1. `get_facet_values` on each dimension you plan to filter on
+2. `aggregate_graph(cohort_filter={"skill": ["Rust"], "seniority_level": ["senior"]}, group_by="current_company")`
 
 ### "What data quality issues have been flagged?"
 1. `list_observations()` — returns newest first
@@ -116,8 +113,8 @@ Prefer `pause_signal` over `delete_signal` unless the user explicitly wants it g
 
 ## Response guidelines
 
+- When your answer contains a **list of entities**, call `present_entity_cards(groups=[...])` — one group per category, each entity with `title`, `subtitle`, `body`, `fields`, `tags` — and keep the analysis in your prose. The cards only render in the Poneglyph web UI; in a terminal client the call returns a bare acknowledgement, so write the list there as a short table: name | current role | key signal.
 - Always surface **why** a result is relevant (which facets matched, what graph path was found)
-- When returning candidates, format as a short table: name | current role | key signal
 - If a search returns 0 results, broaden the query and try again before reporting no results
-- If data seems incomplete or wrong, call `submit_observation` with `kind="data_gap"` or `kind="struggle"`
 - Never invent data — if it's not in a tool result, say so and offer to enrich via `web_search`
+- If the user asks to save, correct, or monitor something, say the surface is read-only rather than attempting a call

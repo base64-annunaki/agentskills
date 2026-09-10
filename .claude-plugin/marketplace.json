@@ -9,7 +9,7 @@
   "plugins": [
     {
       "name": "poneglyph-intelligence",
-      "description": "Recruiting intelligence skill for the Poneglyph knowledge base — search candidates, explore profiles, map connections, enrich data, and manage signals",
+      "description": "Read-only recruiting intelligence skill for the Poneglyph knowledge base — search candidates, explore profiles, query graph cohorts, map connections, and enrich data",
       "source": "./plugins/poneglyph-intelligence",
       "category": "development"
     }
