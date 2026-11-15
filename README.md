@@ -13,7 +13,7 @@ claude plugin marketplace add base64-annunaki/agentskills
 claude plugin install {plugin-name}@poneglyph
 ```
 
-See all available plugins under [plugins](./plugins) directory.
+No plugins are published at the moment: the last one, `poneglyph-intelligence`, was retired because the MCP endpoint it called was removed.
 
 ## Contributing
 

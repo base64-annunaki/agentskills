@@ -6,12 +6,5 @@
     "name": "Poneglyph",
     "url": "https://github.com/base64-annunaki"
   },
-  "plugins": [
-    {
-      "name": "poneglyph-intelligence",
-      "description": "Recruiting intelligence skill for the Poneglyph knowledge base — search candidates, explore profiles, map connections, enrich data, and manage signals",
-      "source": "./plugins/poneglyph-intelligence",
-      "category": "development"
-    }
-  ]
+  "plugins": []
 }
